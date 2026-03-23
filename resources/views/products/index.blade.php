@@ -65,6 +65,7 @@ const tableBody = document.querySelector('#productTable tbody');
 const grandTotalEl = document.getElementById('grandTotal');
 
 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+window.csrfToken = csrfToken;
 
 // FETCH PRODUCTS
 async function fetchProducts() {
@@ -80,14 +81,14 @@ async function fetchProducts() {
 
     const row = `
     <tr>
-        <td>${product.name}</td>
-        <td>${product.quantity}</td>
-        <td>${product.price}</td>
+        <td class="name">${product.name}</td>
+        <td class="quantity">${product.quantity}</td>
+        <td class="price">${product.price}</td>
         <td>${product.datetime}</td>
         <td>${total}</td>
         <td>
-            <button class="btn btn-sm btn-primary" onclick="openEditModal(${index}, this)"><i class="bi bi-pencil me-1"></i>Edit</button>
-            <button class="btn btn-sm btn-danger" onclick="deleteProduct(${index})"><i class="bi bi-trash me-1"></i>Delete</button>
+            <button class="btn btn-sm btn-primary" onclick="openEditModal(this)"><i class="bi bi-pencil me-1"></i>Edit</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteProduct(this)"><i class="bi bi-trash me-1"></i>Delete</button>
         </td>
     </tr>
     `;
@@ -120,14 +121,14 @@ form.addEventListener('submit', async function(e) {
 async function updateProduct(index, btn) {
     const row = btn.closest('tr');
 
-    const name = row.querySelector('.name').value;
-    const quantity = row.querySelector('.quantity').value;
-    const price = row.querySelector('.price').value;
+    const name = row.querySelector('.name').innerText.trim();
+    const quantity = row.querySelector('.quantity').innerText.trim();
+    const price = row.querySelector('.price').innerText.trim();
 
     await fetch(`/products/${index}`, {
         method: 'POST',
         headers: {
-            'X-CSRF-TOKEN': csrfToken
+            'X-CSRF-TOKEN': window.csrfToken
         },
         body: new URLSearchParams({
             name, quantity, price
@@ -138,13 +139,17 @@ async function updateProduct(index, btn) {
 }
 
 //product delete
-async function deleteProduct(index) {
+async function deleteProduct(btn) {
+    const row = btn.closest('tr');
+    const rows = Array.from(tableBody.querySelectorAll('tr'));
+    const index = rows.indexOf(row);
+    if (index === -1) return;
     if (!confirm('Delete this product?')) return;
 
     await fetch(`/products/${index}`, {
         method: 'DELETE',
         headers: {
-            'X-CSRF-TOKEN': csrfToken
+            'X-CSRF-TOKEN': window.csrfToken
         }
     });
 
@@ -201,37 +206,39 @@ const editQuantityEl = document.getElementById('editQuantity');
 const editPriceEl = document.getElementById('editPrice');
 const saveEditBtn = document.getElementById('saveEditBtn');
 
-function openEditModal(index, btn) {
-        const row = btn.closest('tr');
-        const name = row.querySelector('.name').value;
-        const quantity = row.querySelector('.quantity').value;
-        const price = row.querySelector('.price').value;
+function openEditModal(btn) {
+    const row = btn.closest('tr');
+    const rows = Array.from(tableBody.querySelectorAll('tr'));
+    const index = rows.indexOf(row);
+    const name = row.querySelector('.name').innerText.trim();
+    const quantity = row.querySelector('.quantity').innerText.trim();
+    const price = row.querySelector('.price').innerText.trim();
 
-        editIndexEl.value = index;
-        editNameEl.value = name;
-        editQuantityEl.value = quantity;
-        editPriceEl.value = price;
+    editIndexEl.value = index;
+    editNameEl.value = name;
+    editQuantityEl.value = quantity;
+    editPriceEl.value = price;
 
-        editModal.show();
+    editModal.show();
 }
 
 saveEditBtn.addEventListener('click', async () => {
-        const index = editIndexEl.value;
-        const name = editNameEl.value;
-        const quantity = editQuantityEl.value;
-        const price = editPriceEl.value;
+    const index = editIndexEl.value;
+    const name = editNameEl.value;
+    const quantity = editQuantityEl.value;
+    const price = editPriceEl.value;
 
-        await fetch(`/products/${index}`, {
-                method: 'POST',
-                headers: {
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams({ name, quantity, price })
-        });
+    await fetch(`/products/${index}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': window.csrfToken,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({ name, quantity, price })
+    });
 
-        editModal.hide();
-        fetchProducts();
+    editModal.hide();
+    fetchProducts();
 });
 </script>
 
